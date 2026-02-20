@@ -19,7 +19,7 @@ SnapExtensions.primitives.set("byte_asNumberArray(type,list)",function(type,list
     }[type].from(list.itemsArray()));
 })
 SnapExtensions.primitives.set("byte_numberArrayCast(array,type)",function(list,type,proc){
-    return new List({
+    return new List(new {
         ["unsigned byte"]:Uint8Array,
         ["unsigned short"]:Uint16Array,
         ["unsigned int"]:Uint32Array,
