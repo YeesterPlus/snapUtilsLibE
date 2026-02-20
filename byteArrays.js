@@ -34,7 +34,7 @@ SnapExtensions.primitives.set("byte_numberArrayCast(array,type)",function(list,t
         throw new Error("expected a number only list but got a "+proc.reportTypeOf(list))
     })()));
 })
-SnapExtensions.primitives.set("byte_typeOfNumberArray(array)",function(type,list){
+SnapExtensions.primitives.set("byte_typeOfNumberArray(array)",function(list){
     return {
         ["Uint8"]:"unsigned byte",
         ["Uint16"]:"unsigned short",
