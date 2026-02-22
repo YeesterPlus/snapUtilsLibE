@@ -9,24 +9,28 @@ SnapExtensions.primitives.set("byte_asNumberArray(type,list)",function(type,list
         ["unsigned byte"]:Uint8Array,
         ["unsigned short"]:Uint16Array,
         ["unsigned int"]:Uint32Array,
+        ["unsigned long"]:BigUint64Array,
         
         ["byte"]:Int8Array,
         ["short"]:Int16Array,
         ["int"]:Int32Array,
+        ["long"]:BigInt64Array,
         
         ["float"]:Float32Array,
         ["real"]:Float64Array
-    }[type].from(list.itemsArray()));
+    }[type].from(type.includes('long')?list.itemsArray():[...list.itemsArray()].map(v=>BigInt(v))));
 })
 SnapExtensions.primitives.set("byte_numberArrayCast(array,type)",function(list,type,proc){
     return new List(new {
         ["unsigned byte"]:Uint8Array,
         ["unsigned short"]:Uint16Array,
         ["unsigned int"]:Uint32Array,
+        ["unsigned long"]:BigUint64Array,
         
         ["byte"]:Int8Array,
         ["short"]:Int16Array,
         ["int"]:Int32Array,
+        ["long"]:BigInt64Array,
         
         ["float"]:Float32Array,
         ["real"]:Float64Array
@@ -39,10 +43,12 @@ SnapExtensions.primitives.set("byte_typeOfNumberArray(array)",function(list){
         ["Uint8"]:"unsigned byte",
         ["Uint16"]:"unsigned short",
         ["Uint32"]:"unsigned int",
+        ["BigUint64"]:"unsigned long",
 
         ["Int8"]:"byte",
         ["Int16"]:"short",
         ["Int32"]:"int",
+        ["BigInt64"]:"long",
 
         ["Float32"]:"float",
         ["Float64"]:"real"
