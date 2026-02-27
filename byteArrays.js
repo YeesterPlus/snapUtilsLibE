@@ -3,7 +3,13 @@
     |  Snap! byte list libary  |
     |     by YeesterPlus       |
     ----------------------------
+    requires ./JavascriptBigintsInSnap.js
 */
+function snapRequire(url=''){
+    SnapExtensions.primitives.get('src_load(url)')(url,new Process(new CommandBlockMorph(),world.childThatIsA(IDE_Morph).stage));
+    world.inform('added '+url);
+}
+snapRequire('https://yeesterPlus.github.io/snapUtilsLibE/JavascriptBigintsInSnap.js');
 SnapExtensions.primitives.set("byte_asNumberArray(type,list)",function(type,list){
     return new List({
         ["unsigned byte"]:Uint8Array,
@@ -18,7 +24,7 @@ SnapExtensions.primitives.set("byte_asNumberArray(type,list)",function(type,list
         
         ["float"]:Float32Array,
         ["real"]:Float64Array
-    }[type].from(type.includes('long')?list.itemsArray():[...list.itemsArray()].map(v=>BigInt(v))));
+    }[type].from((!type.includes('long'))?list.itemsArray():[...list.itemsArray()].map(v=>BigInt(String(v)))));
 })
 SnapExtensions.primitives.set("byte_numberArrayCast(array,type)",function(list,type,proc){
     return new List(new {
