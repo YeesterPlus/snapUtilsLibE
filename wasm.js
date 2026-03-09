@@ -1,4 +1,4 @@
-//@use{byteArrays}
+(()={
 function dictFromObject(obj){
     let getter   = k=>k==='...'?dictFromObject(Object.getPrototypeOf(obj)):obj[k],
         setter   = (k,v)=>obj[k]=v,
@@ -109,7 +109,8 @@ addPrimitives('wasm',{
             if(mem instanceof List)
                 return arguments.callee(
                     mem.lookup('_content')||
-                        err(new Error('expecting a vmem but got a list'))
+                        err(new Error('expecting a vmem but got a list')),
+                        idx
                 );
             if(!(mem instanceof WebAssembly.Memory))
                 throw new Error('expecting a vmem but got a '+Process.prototype.reportTypeOf(mem));
@@ -118,34 +119,35 @@ addPrimitives('wasm',{
             if(idx instanceof List)
                 return idx.map(v=>this_function(mem,v));
             let view = new DataView(mem.buffer);
-            return view.getUint8(+i);
+            return view.getUint8(+idx);
         },
         'slice(memory,start,end)':function(mem,start,end){
             if(mem instanceof List)
                 return arguments.callee(
                     mem.lookup('_content')||
-                        err(new Error('expecting a vmem but got a list'))
+                        err(new Error('expecting a vmem but got a list')),
+                        start,
+                        end
                 );
             if(!(mem instanceof WebAssembly.Memory))
                 throw new Error('expecting a vmem but got a '+Process.prototype.reportTypeOf(mem));
             
-            let view = new Uint8Array(mem.buffer,start-1,end-start+1);
-            let dest = new Uint8Array(start-end+1);
-            dest.set(view);
-            return dest;
+            return new List(new Uint8Array(mem.buffer.slice(start-1,end-1)));
         },
         'put(memory,idx,bytes)':function(mem,idx,bytes){
             if(bytes instanceof List)
-                return arguments.callee(mem,idx,bytes.contents??[]);
-            if(!(bytes instanceof PackedNumberArray))
+                return arguments.callee(mem,idx,bytes.itemsArray()??[]);
+            if(!(bytes?.buffer))
                 throw new Error(
                     'expecing a number list but got a '+
-                        bytes instanceof Array?'list':Process.prototype.reportTypeOf(bytes)
+                        (bytes?.at?'list':Process.prototype.reportTypeOf(bytes))
                     );
             if(mem instanceof List)
                 return arguments.callee(
                     mem.lookup('_content')||
-                        err(new Error('expecting a vmem but got a list'))
+                        err(new Error('expecting a vmem but got a list')),
+                    idx,
+                    bytes
                 );
             if(!(mem instanceof WebAssembly.Memory))
                 throw new Error('expecting a vmem but got a '+Process.prototype.reportTypeOf(mem));
@@ -158,10 +160,11 @@ addPrimitives('wasm',{
             if(mem instanceof List)
                 return arguments.callee(
                     mem.lookup('_content')||
-                        err(new Error('expecting a vmem but got a list'))
+                        err(new Error('expecting a vmem but got a list')),
+                        size
                 );
             if(mem instanceof WebAssembly.Memory)
-                return mem.grow(size);
+                return mem.grow(Number(size));
         }
     },
     mod:{
@@ -270,5 +273,70 @@ addPrimitives('wasm',{
             
             return new List(Object.entries(inst.exports).map(v=>new List(v)));
         }
-    }
+    },
+    refList:{
+        'new(length,onlyWasmFunc?[,maximum])':function(len,onlyWasmFunc,maximum){
+            if(arguments.length>4||arguments.length==1)
+                throw new Error('expecting 1-3 arguments but got '+(arguments.length-1));
+            if(arguments.length<4)
+                return arguments.callee(
+                    ...[...arguments].slice(0,-1),//specified parameters without proc
+                    ...[0,true,void 0,null].slice(4-(arguments.length-1))//defaults
+                );
+
+            let length = Number(len),
+                opt = onlyWasmFunc ? 'anyfunc' : 'externref',
+                max = Number(maximum);
+            return new WebAssembly.Table({
+                initial:length,
+                element:opt,
+                maximum:max||void 0
+            },null);
+        },
+        'at(table,idx)':function(table,idx){
+            if(table instanceof List)
+                return arguments.callee(
+                    table.lookup('_content')||
+                        err(new Error('expecting a module but got a list')),idx
+                );
+            if(!(table instanceof WebAssembly.Table))
+                throw new Error('expecting a table but got a '+Process.prototype.reportTypeOf(table));
+            return table.get(Number(idx)-1)??null;
+        },
+        'put(table,idx,value)':function(table,idx,value){
+            if(table instanceof List)
+                return arguments.callee(
+                    table.lookup('_content')||
+                        err(new Error('expecting a module but got a list')),idx,value
+                );
+            if(!(table instanceof WebAssembly.Table))
+                throw new Error('expecting a table but got a '+Process.prototype.reportTypeOf(table));
+
+            table.set(Number(idx)-1,value);
+        },
+        'grow(table,elems)':function(table,size){
+            if(table instanceof List)
+                return arguments.callee(
+                    table.lookup('_content')||
+                        err(new Error('expecting a module but got a list')),size
+                );
+            if(!(table instanceof WebAssembly.Table))
+                throw new Error('expecting a table but got a '+Process.prototype.reportTypeOf(table));
+
+            return table.grow(Number(size));
+        },
+        'lengthOf(table)':function(table){
+            if(table instanceof List)
+                return arguments.callee(
+                    table.lookup('_content')||
+                        err(new Error('expecting a module but got a list'))
+                );
+            if(!(table instanceof WebAssembly.Table))
+                throw new Error('expecting a table but got a '+Process.prototype.reportTypeOf(table));
+            
+            return table.length
+        }
+    },
+
 })
+})()
